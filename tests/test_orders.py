@@ -1,18 +1,20 @@
 
+import contextlib
+import io
 import unittest
 
 from models.customer import Customer, CustomerType
 from models.order_item import OrderItem
 from models.order import Order, VIPOrder, PaymentType
-from models.gift import Gift
+from models.gift import Gift, GiftInterface
 
 
 class TestOrderSystem(unittest.TestCase):
 
     def setUp(self):
         # Reset IDs so each test is independent.
-        Customer._used_ids.clear()
-        Order._used_ids.clear()
+        Customer.reset_ids()
+        Order.reset_ids()
 
         self.regular = Customer(
             1, "Alex", "Smith",
@@ -113,6 +115,77 @@ class TestOrderSystem(unittest.TestCase):
         self.vip.take_gift(gift)
 
         self.assertIs(self.vip.gift, gift)
+
+    def test_open_gift_prints_message(self):
+        buffer = io.StringIO()
+        self.vip.take_gift(Gift("Headset"))
+
+        with contextlib.redirect_stdout(buffer):
+            self.vip.open_gift()
+
+        self.assertEqual(
+            buffer.getvalue().strip(),
+            "Congratulations! you got a new gift! Enjoy!"
+        )
+
+    def test_open_gift_without_gift(self):
+        buffer = io.StringIO()
+
+        with contextlib.redirect_stdout(buffer):
+            self.regular.open_gift()
+
+        self.assertEqual(buffer.getvalue().strip(), "No gift available")
+
+    def test_gift_can_be_any_type_with_open_gift(self):
+        class CustomGift:
+            def open_gift(self):
+                print("custom")
+
+        self.regular.take_gift(CustomGift())
+        self.assertIsInstance(self.regular.gift, GiftInterface)
+
+    def test_gift_without_open_gift_rejected(self):
+        with self.assertRaises(TypeError):
+            self.regular.take_gift("not a gift")
+
+    def test_vip_customer_without_discount(self):
+        no_discount = Customer(
+            3, "Dana", "Levi", "dana@example.com", "Haifa",
+            CustomerType.VIP
+        )
+        order = VIPOrder(
+            103, "VIP No Discount", "Haifa",
+            [self.laptop],
+            no_discount, PaymentType.CASH
+        )
+
+        self.assertEqual(order.total_price, 3500)
+
+    def test_regular_customer_may_have_discount_but_not_applied(self):
+        customer = Customer(
+            4, "Noa", "Cohen", "noa@example.com", "Lod",
+            CustomerType.REGULAR, 10
+        )
+        order = Order(
+            104, "Regular", "Lod",
+            [self.laptop],
+            customer, PaymentType.CASH
+        )
+
+        self.assertEqual(order.total_price, 3500)
+
+    def test_vip_total_is_rounded_to_two_decimals(self):
+        customer = Customer(
+            5, "Ron", "Bar", "ron@example.com", "Lod",
+            CustomerType.VIP, 33
+        )
+        order = VIPOrder(
+            105, "Rounded", "Lod",
+            [OrderItem(10, "Cable", 10.01)],
+            customer, PaymentType.CHECK
+        )
+
+        self.assertEqual(order.total_price, 6.71)
 
     def test_negative_item_price(self):
         with self.assertRaises(ValueError):

@@ -1,5 +1,6 @@
 
 from enum import Enum
+from models.gift import GiftInterface
 from models.order_item import OrderItem
 import math
 
@@ -12,6 +13,11 @@ class CustomerType(Enum):
 class Customer:
     _used_ids = set()
 
+    @classmethod
+    def reset_ids(cls):
+        """Forget all registered customer IDs (useful for tests)."""
+        cls._used_ids.clear()
+
     def __init__(
         self,
         customer_id: int,
@@ -22,6 +28,11 @@ class Customer:
         customer_type: CustomerType = CustomerType.REGULAR,
         discount: float | None = None,
     ):
+        """Create a customer.
+
+        discount is a PERCENTAGE between 0 and 100 (15 means 15% off),
+        or None for no discount. It is only applied to VIP orders.
+        """
         if not isinstance(customer_id, int) or isinstance(customer_id, bool):
             raise TypeError("Customer ID must be an integer")
 
@@ -37,9 +48,6 @@ class Customer:
 
             if not math.isfinite(discount) or not 0 <= discount <= 100:
                 raise ValueError("Discount must be between 0 and 100")
-
-        if customer_type == CustomerType.REGULAR and discount not in (None, 0):
-            raise ValueError("Regular customers cannot have a discount")
 
         self.__id = customer_id
         self.__first_name = first_name
@@ -110,7 +118,8 @@ class Customer:
         ]
 
     def take_gift(self, gift):
-        if not callable(getattr(gift, "open_gift", None)):
+        # Any object that provides open_gift() is accepted.
+        if not isinstance(gift, GiftInterface):
             raise TypeError("Gift must have an open_gift() method")
 
         self.__gift = gift

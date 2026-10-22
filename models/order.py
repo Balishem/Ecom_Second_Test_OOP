@@ -16,6 +16,11 @@ class PaymentType(Enum):
 class Order:
     _used_ids = set()
 
+    @classmethod
+    def reset_ids(cls):
+        """Forget all registered order IDs (useful for tests)."""
+        cls._used_ids.clear()
+
     def __init__(
         self,
         order_id: int,
@@ -38,6 +43,9 @@ class Order:
         if not isinstance(payment_type, PaymentType):
             raise TypeError("Invalid payment type")
 
+        if order_date is not None and not isinstance(order_date, datetime):
+            raise TypeError("Order date must be a datetime object")
+
         if not all(isinstance(item, OrderItem) for item in items):
             raise TypeError("All items must be OrderItem objects")
 
@@ -52,9 +60,6 @@ class Order:
         self.__items = items.copy()
         self.__customer = customer
         self.__payment_type = payment_type
-        if order_date is not None and not isinstance(order_date, datetime):
-            raise TypeError("Order date must be a datetime object")
-
         self.__order_date = datetime.now() if order_date is None else order_date
 
         # Constructor calculates the total price.
@@ -142,6 +147,7 @@ class VIPOrder(Order):
 
     def calculate_total_price(self):
         original_price = super().calculate_total_price()
+        # customer.discount is a percentage (15 means 15% off).
         discount = self.customer.discount or 0
 
-        return original_price * (1 - discount / 100)
+        return round(original_price * (1 - discount / 100), 2)
