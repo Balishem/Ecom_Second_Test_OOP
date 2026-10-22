@@ -1,5 +1,7 @@
 
 from enum import Enum
+from models.order_item import OrderItem
+import math
 
 
 class CustomerType(Enum):
@@ -20,14 +22,21 @@ class Customer:
         customer_type: CustomerType = CustomerType.REGULAR,
         discount: float | None = None,
     ):
+        if not isinstance(customer_id, int) or isinstance(customer_id, bool):
+            raise TypeError("Customer ID must be an integer")
+
         if customer_id in Customer._used_ids:
             raise ValueError(f"Customer ID {customer_id} already exists")
 
         if not isinstance(customer_type, CustomerType):
             raise TypeError("Invalid customer type")
 
-        if discount is not None and not 0 <= discount <= 100:
-            raise ValueError("Discount must be between 0 and 100")
+        if discount is not None:
+            if isinstance(discount, bool) or not isinstance(discount, (int, float)):
+                raise TypeError("Discount must be a number")
+
+            if not math.isfinite(discount) or not 0 <= discount <= 100:
+                raise ValueError("Discount must be between 0 and 100")
 
         if customer_type == CustomerType.REGULAR and discount not in (None, 0):
             raise ValueError("Regular customers cannot have a discount")
@@ -81,13 +90,19 @@ class Customer:
         return self.__gift
 
     def add_favorite_item(self, item):
+        if not isinstance(item, OrderItem):
+            raise TypeError("Favorite item must be an OrderItem")
+
         if not any(
-            favorite.name == item.name
-            for favorite in self.__favorite_items
+                favorite.name == item.name
+                for favorite in self.__favorite_items
         ):
             self.__favorite_items.append(item)
 
     def remove_favorite_item(self, item):
+        if not isinstance(item, OrderItem):
+            raise TypeError("Favorite item must be an OrderItem")
+
         self.__favorite_items = [
             favorite
             for favorite in self.__favorite_items

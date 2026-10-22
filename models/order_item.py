@@ -1,3 +1,4 @@
+import math
 
 class OrderItem:
     def __init__(self, item_id: int, name: str, price: float):
@@ -9,6 +10,9 @@ class OrderItem:
 
         if not isinstance(price, (int, float)) or isinstance(price, bool):
             raise TypeError("Item price must be a number")
+
+        if not math.isfinite(price):
+            raise ValueError("Item price must be finite")
 
         if price < 0:
             raise ValueError("Item price cannot be negative")

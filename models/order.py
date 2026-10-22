@@ -52,17 +52,22 @@ class Order:
         self.__items = items.copy()
         self.__customer = customer
         self.__payment_type = payment_type
-        self.__order_date = order_date or datetime.now()
+        if order_date is not None and not isinstance(order_date, datetime):
+            raise TypeError("Order date must be a datetime object")
+
+        self.__order_date = datetime.now() if order_date is None else order_date
 
         # Constructor calculates the total price.
         self.__total_price = self.calculate_total_price()
 
-        # Register ID only after successful calculation.
-        Order._used_ids.add(order_id)
-
         # Automatically update customer's favorite items.
         for item in self.__items:
             self.__customer.add_favorite_item(item)
+
+        # Register ID only after successful calculation.
+        Order._used_ids.add(order_id)
+
+
 
     @property
     def id(self):

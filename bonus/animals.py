@@ -43,12 +43,15 @@ class Spider(Animal):
 class Cat(Animal, Pet):
     def __init__(self, name: str = ""):
         super().__init__(4)
-        self._name = name
+        self.setName(name)
 
     def getName(self) -> str:
         return self._name
 
     def setName(self, name: str):
+        if not isinstance(name, str):
+            raise TypeError("Pet name must be a string")
+
         self._name = name
 
     def play(self):
@@ -67,6 +70,9 @@ class Fish(Animal, Pet):
         return self._name
 
     def setName(self, name: str):
+        if not isinstance(name, str):
+            raise TypeError("Pet name must be a string")
+
         self._name = name
 
     def play(self):

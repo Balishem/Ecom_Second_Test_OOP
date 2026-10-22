@@ -56,9 +56,4 @@ python -m bonus.demo
 ```
 
 
-hello amma Oleg, I love gaming and cars and pets.
-now I do my test
-Hello Jackie
-How are u today, jackie
-Do u love sushi? 
-britan its a capital of london
+
